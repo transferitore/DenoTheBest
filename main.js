@@ -7,4 +7,4 @@ app
     return "Hello World"
   })
   .static("/", "./public")
-  .start({ port: 8000 });
+  .start();
