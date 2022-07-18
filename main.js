@@ -1,11 +1,33 @@
-import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
+import { serve } from "https://deno.land/std/http/mod.ts";
+import { lookup } from "https://deno.land/x/media_types/mod.ts";
 
-const HTML = await Deno.readFile("./index.html");
+const BASE_PATH = "./public";
 
-serve(async () => {
-  return new Response(HTML, {
+const reqHandler = async (req: Request) => {
+  var filePath = BASE_PATH + new URL(req.url).pathname;
+  
+  if (filePath==BASE_PATH+'/') {
+     var filePath = BASE_PATH+'/' + 'index.html'
+  }
+  console.log(filePath);
+
+  let fileSize;
+  try {
+    fileSize = (await Deno.stat(filePath)).size;
+  } catch (e) {
+    if (e instanceof Deno.errors.NotFound) {
+      return new Response(null, { status: 404 });
+    }
+    return new Response(null, { status: 500 });
+  }
+  const body = (await Deno.open(filePath)).readable;
+  return new Response(body, {
     headers: {
-      "content-type": "text/html",
+      "content-length": fileSize.toString(),
+      "content-type": lookup(filePath) || "application/octet-stream",
     },
   });
-});
+};
+
+serve(reqHandler);
+
